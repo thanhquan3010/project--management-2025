@@ -70,4 +70,4 @@ const ProjectCard = ({ project, onClick }) => {
   );
 };
 
-export default ProjectCard;
+export default React.memo(ProjectCard);

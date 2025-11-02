@@ -72,4 +72,4 @@ const WorkspaceList = ({ onSelectWorkspace }) => {
   );
 };
 
-export default WorkspaceList;
+export default React.memo(WorkspaceList);

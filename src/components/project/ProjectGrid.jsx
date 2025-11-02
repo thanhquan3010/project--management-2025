@@ -38,4 +38,4 @@ const ProjectGrid = ({ onSelectProject }) => {
   );
 };
 
-export default ProjectGrid;
+export default React.memo(ProjectGrid);

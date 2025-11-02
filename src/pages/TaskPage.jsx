@@ -24,7 +24,6 @@ const TaskPage = () => {
       <TaskFilters />
 
       <TaskBoard onAddTask={() => setIsCreateModalOpen(true)} />
-
       <CreateTaskModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

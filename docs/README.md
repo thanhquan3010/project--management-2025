@@ -335,29 +335,38 @@ Nếu có vấn đề hoặc câu hỏi:
 
 ## Current Progress Snapshot
 
-- [x] Phase 1: Setup & Configuration - Vite scaffold, Tailwind baseline, initial layout folders
-- [ ] Phase 2: Redux Store Setup - core slices and typed hooks
-- [ ] Phase 3: Common Components - button, input, modal, card, dropdown, badge
-- [ ] Phase 4+: Workspace, Project, Task, Analytics modules and routing
+- [x] Phase 1: Setup & Configuration – Vite scaffold, Tailwind baseline, initial layout
+- [x] Phase 2: Redux Store Setup – global slices, persistence wiring
+- [x] Phase 3: Common Components – shared UI primitives
+- [x] Phase 4–8: Workspace/Project/Task/Analytics modules and routed pages
+- [x] Phase 9: Local storage + sample data bootstrapping
+- [x] Phase 10: Testing & Optimization – Vitest setup, responsive/layout tweaks, memoization
+- [x] Phase 11: Deployment – production build scripts & Netlify config
 
 ---
 
-## Phase 1 Deliverables (Completed)
+## Testing & Optimization Deliverables
 
-- Vite + React app bootstrap (`index.html`, `vite.config.js`, `src/main.jsx`, `src/App.jsx`)
-- Tailwind CSS + PostCSS configuration (`tailwind.config.js`, `postcss.config.js`, `src/index.css`)
-- Baseline project structure with placeholders for features, pages, services, store, and utilities
-- `.gitignore` rules covering node modules, build artifacts, and environment files
-
-> Verify the setup by running `npm install` followed by `npm run dev`, then visit `http://localhost:5173` to confirm the starter screen renders.
+- Added Vitest + Testing Library harness (`package.json`, `vite.config.js`, `src/setupTests.js`)
+- Implemented store-aware render helper (`src/test-utils/renderWithProviders.js`)
+- Authored critical UI tests (`src/components/workspace/__tests__/WorkspaceList.test.jsx`, `src/components/task/__tests__/TaskBoard.test.jsx`)
+- Enhanced performance with memoization and memoized selectors across key components
+- Improved responsive behaviour with a reusable breakpoint hook (`src/hooks/useBreakpoint.js`) and adaptive sidebar
 
 ---
 
-## Upcoming Focus
+## Deployment Readiness
 
-1. Configure Redux store scaffolding (`src/store`, feature slices, typed hooks)
-2. Build reusable UI components per design system guidelines
-3. Implement workspace/project/task modules incrementally with mock data
-4. Add analytics visualizations and complete routing shell
+- Production build script (`npm run build`) and preview support (`npm run preview`)
+- Netlify configuration (`netlify.toml`) for SPA redirects and build command
+- Documented test/build workflow via package scripts (`npm run test`, `npm run test:watch`, `npm run lint`)
+
+---
+
+## Recommended Next Steps
+
+1. Integrate continuous deployment (Vercel/Netlify/GitHub Actions) using the new config.
+2. Expand automated test coverage (drag-and-drop, modals, analytics charts).
+3. Begin backend integration or real data sync as outlined in the roadmap extensions.
 
 ---

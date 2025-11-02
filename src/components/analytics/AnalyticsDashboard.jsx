@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { TrendingUp, Users, CheckCircle2, Clock } from 'lucide-react';
 import Card from '../common/Card';
@@ -10,41 +10,45 @@ const AnalyticsDashboard = () => {
   const { tasks } = useSelector((state) => state.task);
   const { teamMembers } = useSelector((state) => state.user);
 
-  const totalProjects = projects.length;
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => task.status === 'completed').length;
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const { stats } = useMemo(() => {
+    const totalProjects = projects.length;
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter((task) => task.status === 'completed').length;
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const stats = [
-    {
-      title: 'Total Projects',
-      value: totalProjects,
-      icon: TrendingUp,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-    },
-    {
-      title: 'Team Members',
-      value: teamMembers.length,
-      icon: Users,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-    },
-    {
-      title: 'Completed Tasks',
-      value: completedTasks,
-      icon: CheckCircle2,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-    },
-    {
-      title: 'Completion Rate',
-      value: `${completionRate}%`,
-      icon: Clock,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
-    },
-  ];
+    return {
+      stats: [
+        {
+          title: 'Total Projects',
+          value: totalProjects,
+          icon: TrendingUp,
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-100',
+        },
+        {
+          title: 'Team Members',
+          value: teamMembers.length,
+          icon: Users,
+          color: 'text-green-600',
+          bgColor: 'bg-green-100',
+        },
+        {
+          title: 'Completed Tasks',
+          value: completedTasks,
+          icon: CheckCircle2,
+          color: 'text-purple-600',
+          bgColor: 'bg-purple-100',
+        },
+        {
+          title: 'Completion Rate',
+          value: `${completionRate}%`,
+          icon: Clock,
+          color: 'text-orange-600',
+          bgColor: 'bg-orange-100',
+        },
+      ],
+    };
+  }, [projects, tasks, teamMembers]);
 
   return (
     <div className="space-y-6">
@@ -76,4 +80,4 @@ const AnalyticsDashboard = () => {
   );
 };
 
-export default AnalyticsDashboard;
+export default React.memo(AnalyticsDashboard);

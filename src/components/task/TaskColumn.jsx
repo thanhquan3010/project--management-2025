@@ -39,4 +39,4 @@ const TaskColumn = ({ title, status, tasks, onAddTask }) => {
   );
 };
 
-export default TaskColumn;
+export default React.memo(TaskColumn);

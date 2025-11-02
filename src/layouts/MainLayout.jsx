@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -22,15 +23,28 @@ const navigation = [
 ];
 
 const MainLayout = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const isCompact = useBreakpoint(1024);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true));
   const location = useLocation();
+
+  useEffect(() => {
+    if (isCompact) {
+      setIsSidebarOpen(false);
+    } else {
+      setIsSidebarOpen(true);
+    }
+  }, [isCompact]);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <aside
         className={clsx(
-          'fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-30',
-          isSidebarOpen ? 'w-64' : 'w-20',
+          'fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-40 lg:z-30',
+          isCompact
+            ? ['w-64', isSidebarOpen ? 'translate-x-0' : '-translate-x-full']
+            : isSidebarOpen
+            ? 'w-64'
+            : 'w-20',
         )}
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
@@ -39,7 +53,7 @@ const MainLayout = ({ children }) => {
           )}
           <button
             type="button"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
             className="p-2 rounded-lg hover:bg-gray-100"
             aria-label="Toggle navigation"
           >
@@ -69,10 +83,18 @@ const MainLayout = ({ children }) => {
         </nav>
       </aside>
 
+      {isCompact && isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-gray-900/40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <div
         className={clsx(
           'transition-all duration-300',
-          isSidebarOpen ? 'ml-64' : 'ml-20',
+          isCompact ? 'ml-0' : isSidebarOpen ? 'ml-64' : 'ml-20',
         )}
       >
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">

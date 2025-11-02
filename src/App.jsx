@@ -1,15 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider, useDispatch } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 import { store } from './store';
 import MainLayout from './layouts/MainLayout';
-import HomePage from './pages/HomePage';
-import WorkspacePage from './pages/WorkspacePage';
-import ProjectPage from './pages/ProjectPage';
-import TaskPage from './pages/TaskPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import TeamPage from './pages/TeamPage';
 import {
   setWorkspaces,
   setCurrentWorkspace,
@@ -25,6 +19,13 @@ import {
   STORAGE_KEYS,
 } from './utils/localStorage';
 import { generateSampleData } from './utils/sampleData';
+
+const HomePage = lazy(() => import('./pages/HomePage'));
+const WorkspacePage = lazy(() => import('./pages/WorkspacePage'));
+const ProjectPage = lazy(() => import('./pages/ProjectPage'));
+const TaskPage = lazy(() => import('./pages/TaskPage'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+const TeamPage = lazy(() => import('./pages/TeamPage'));
 
 const AppContent = () => {
   const dispatch = useDispatch();
@@ -80,14 +81,22 @@ const AppContent = () => {
   return (
     <Router>
       <MainLayout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/workspaces" element={<WorkspacePage />} />
-          <Route path="/projects" element={<ProjectPage />} />
-          <Route path="/tasks" element={<TaskPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/team" element={<TeamPage />} />
-        </Routes>
+        <Suspense
+          fallback={(
+            <div className="p-6 text-center text-gray-600">
+              Loading workspace experience...
+            </div>
+          )}
+        >
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/workspaces" element={<WorkspacePage />} />
+            <Route path="/projects" element={<ProjectPage />} />
+            <Route path="/tasks" element={<TaskPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/team" element={<TeamPage />} />
+          </Routes>
+        </Suspense>
       </MainLayout>
     </Router>
   );
