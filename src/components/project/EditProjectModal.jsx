@@ -20,6 +20,7 @@ const statusOptions = [
 const EditProjectModal = ({ project, isOpen, onClose }) => {
   const dispatch = useDispatch();
   const canManageProjects = usePermission(PERMISSIONS.MANAGE_PROJECTS);
+  const isReadOnly = !canManageProjects;
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -41,6 +42,9 @@ const EditProjectModal = ({ project, isOpen, onClose }) => {
   }, [project]);
 
   const handleChange = (event) => {
+    if (isReadOnly) {
+      return;
+    }
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -49,6 +53,9 @@ const EditProjectModal = ({ project, isOpen, onClose }) => {
   };
 
   const handleStatusChange = (value) => {
+    if (isReadOnly) {
+      return;
+    }
     setFormData((prev) => ({ ...prev, status: value }));
   };
 
@@ -65,7 +72,7 @@ const EditProjectModal = ({ project, isOpen, onClose }) => {
     if (!project) {
       return;
     }
-    if (!canManageProjects) {
+    if (isReadOnly) {
       toast.error('You do not have permission to manage projects.');
       return;
     }
@@ -116,6 +123,7 @@ const EditProjectModal = ({ project, isOpen, onClose }) => {
           value={formData.name}
           onChange={handleChange}
           error={errors.name}
+          disabled={isReadOnly}
         />
 
         <div>
@@ -127,7 +135,8 @@ const EditProjectModal = ({ project, isOpen, onClose }) => {
             value={formData.description}
             onChange={handleChange}
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isReadOnly}
           />
         </div>
 
@@ -136,6 +145,7 @@ const EditProjectModal = ({ project, isOpen, onClose }) => {
           options={statusOptions}
           value={formData.status}
           onChange={handleStatusChange}
+          disabled={isReadOnly}
         />
 
         <Input
@@ -144,9 +154,10 @@ const EditProjectModal = ({ project, isOpen, onClose }) => {
           type="date"
           value={formData.deadline}
           onChange={handleChange}
+          disabled={isReadOnly}
         />
 
-        {!canManageProjects && (
+        {isReadOnly && (
           <p className="text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3">
             You do not have permission to edit projects.
           </p>

@@ -6,6 +6,7 @@ const Input = ({
   error,
   helperText,
   className,
+  disabled = false,
   ...props
 }) => {
   return (
@@ -21,8 +22,10 @@ const Input = ({
           error
             ? 'border-red-500 focus:ring-red-500'
             : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500',
+          disabled && 'bg-gray-100 text-gray-500 cursor-not-allowed focus:ring-0 focus:border-gray-300',
           className,
         )}
+        disabled={disabled}
         {...props}
       />
       {error && (

@@ -11,6 +11,7 @@ import { PERMISSIONS } from '../../constants/permissions';
 const CreateWorkspaceModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const canManageWorkspaces = usePermission(PERMISSIONS.MANAGE_WORKSPACES);
+  const isReadOnly = !canManageWorkspaces;
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -18,6 +19,9 @@ const CreateWorkspaceModal = ({ isOpen, onClose }) => {
   const [errors, setErrors] = useState({});
 
   const handleChange = (event) => {
+    if (isReadOnly) {
+      return;
+    }
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -35,7 +39,7 @@ const CreateWorkspaceModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!canManageWorkspaces) {
+    if (isReadOnly) {
       toast.error('You do not have permission to manage workspaces.');
       return;
     }
@@ -84,6 +88,7 @@ const CreateWorkspaceModal = ({ isOpen, onClose }) => {
           onChange={handleChange}
           placeholder="e.g., My Company"
           error={errors.name}
+          disabled={isReadOnly}
         />
 
         <div>
@@ -96,7 +101,8 @@ const CreateWorkspaceModal = ({ isOpen, onClose }) => {
             onChange={handleChange}
             placeholder="Brief description of this workspace"
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isReadOnly}
           />
         </div>
 

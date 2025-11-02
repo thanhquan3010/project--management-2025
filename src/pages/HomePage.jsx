@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { ArrowRight, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { updateTaskAsync } from '../features/task/taskSlice';
@@ -20,12 +21,17 @@ const HomePage = () => {
   const recentTasks = tasks.slice(0, 5);
 
   const handleToggleTaskStatus = useCallback(
-    (task) => {
-      const nextStatus = task.status === 'completed' ? 'pending' : 'completed';
+    async (task) => {
       if (!canManageTasks) {
+        toast.error('You do not have permission to update tasks.');
         return;
       }
-      dispatch(updateTaskAsync({ id: task.id, updates: { status: nextStatus } }));
+      const nextStatus = task.status === 'completed' ? 'pending' : 'completed';
+      try {
+        await dispatch(updateTaskAsync({ id: task.id, updates: { status: nextStatus } })).unwrap();
+      } catch (error) {
+        toast.error(error || 'Failed to update task status');
+      }
     },
     [dispatch, canManageTasks],
   );

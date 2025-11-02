@@ -8,6 +8,7 @@ const Dropdown = ({
   value,
   onChange,
   placeholder = 'Select option',
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -35,8 +36,12 @@ const Dropdown = ({
 
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-2 text-left bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={clsx(
+          'w-full px-4 py-2 text-left bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between',
+          disabled && 'bg-gray-100 text-gray-500 cursor-not-allowed focus:ring-0 focus:border-gray-300',
+        )}
+        disabled={disabled}
       >
         <span
           className={clsx(selectedOption ? 'text-gray-900' : 'text-gray-500')}
@@ -49,7 +54,7 @@ const Dropdown = ({
         />
       </button>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
           {options.map((option) => (
             <button

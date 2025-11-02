@@ -14,6 +14,7 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const { currentWorkspace } = useSelector((state) => state.workspace);
   const canManageProjects = usePermission(PERMISSIONS.MANAGE_PROJECTS);
+  const isReadOnly = !canManageProjects;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -31,6 +32,9 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
   ];
 
   const handleChange = (event) => {
+    if (isReadOnly) {
+      return;
+    }
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -55,7 +59,7 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!canManageProjects) {
+    if (isReadOnly) {
       toast.error('You do not have permission to manage projects.');
       return;
     }
@@ -115,6 +119,7 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
           onChange={handleChange}
           placeholder="e.g., Website Redesign"
           error={errors.name}
+          disabled={isReadOnly}
         />
 
         <div>
@@ -127,7 +132,8 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
             onChange={handleChange}
             placeholder="Brief description of the project"
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isReadOnly}
           />
         </div>
 
@@ -136,6 +142,7 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
           options={statusOptions}
           value={formData.status}
           onChange={handleStatusChange}
+          disabled={isReadOnly}
         />
 
         <Input
@@ -144,6 +151,7 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
           type="date"
           value={formData.deadline}
           onChange={handleChange}
+          disabled={isReadOnly}
         />
         {!canManageProjects && (
           <p className="text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3">

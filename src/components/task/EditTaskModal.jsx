@@ -23,6 +23,7 @@ const EditTaskModal = ({ task, isOpen, onClose }) => {
   const dispatch = useDispatch();
   const { teamMembers } = useSelector((state) => state.user);
   const canManageTasks = usePermission(PERMISSIONS.MANAGE_TASKS);
+  const isReadOnly = !canManageTasks;
   const [formData, setFormData] = useState(defaultForm);
   const [errors, setErrors] = useState({});
 
@@ -43,6 +44,9 @@ const EditTaskModal = ({ task, isOpen, onClose }) => {
   }, [task]);
 
   const handleChange = (event) => {
+    if (isReadOnly) {
+      return;
+    }
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -80,7 +84,7 @@ const EditTaskModal = ({ task, isOpen, onClose }) => {
     if (!task) {
       return;
     }
-    if (!canManageTasks) {
+    if (isReadOnly) {
       toast.error('You do not have permission to manage tasks.');
       return;
     }
@@ -133,6 +137,7 @@ const EditTaskModal = ({ task, isOpen, onClose }) => {
           value={formData.title}
           onChange={handleChange}
           error={errors.title}
+          disabled={isReadOnly}
         />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -143,7 +148,8 @@ const EditTaskModal = ({ task, isOpen, onClose }) => {
             value={formData.description}
             onChange={handleChange}
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isReadOnly}
           />
         </div>
 
@@ -153,12 +159,14 @@ const EditTaskModal = ({ task, isOpen, onClose }) => {
             options={statusOptions}
             value={formData.status}
             onChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
+            disabled={isReadOnly}
           />
           <Dropdown
             label="Priority"
             options={priorityOptions}
             value={formData.priority}
             onChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))}
+            disabled={isReadOnly}
           />
         </div>
 
@@ -168,6 +176,7 @@ const EditTaskModal = ({ task, isOpen, onClose }) => {
           value={formData.assignedTo}
           onChange={(value) => setFormData((prev) => ({ ...prev, assignedTo: value }))}
           placeholder="Select team member"
+          disabled={isReadOnly}
         />
 
         <Input
@@ -176,9 +185,10 @@ const EditTaskModal = ({ task, isOpen, onClose }) => {
           type="date"
           value={formData.dueDate}
           onChange={handleChange}
+          disabled={isReadOnly}
         />
 
-        {!canManageTasks && (
+        {isReadOnly && (
           <p className="text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3">
             You are signed in with view-only permissions. Only project managers or admins can edit
             tasks.

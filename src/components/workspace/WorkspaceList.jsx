@@ -6,12 +6,21 @@ import { setCurrentProject } from '../../features/project/projectSlice';
 import Card from '../common/Card';
 import Badge from '../common/Badge';
 
-const WorkspaceList = ({ onSelectWorkspace, onEditWorkspace, onDeleteWorkspace, canManageWorkspaces }) => {
+const WorkspaceList = ({
+  onSelectWorkspace,
+  onEditWorkspace,
+  onDeleteWorkspace,
+  canManageWorkspaces = false,
+}) => {
   const dispatch = useDispatch();
   const { workspaces, currentWorkspace } = useSelector((state) => state.workspace);
   const { projects } = useSelector((state) => state.project);
 
   const handleSelectWorkspace = (workspace) => {
+    if (workspace.id === currentWorkspace?.id) {
+      onSelectWorkspace?.(workspace);
+      return;
+    }
     dispatch(setCurrentWorkspace(workspace));
     const workspaceProjects = projects.filter(
       (project) => project.workspaceId === workspace.id,

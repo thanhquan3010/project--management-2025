@@ -15,6 +15,7 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
   const { currentProject } = useSelector((state) => state.project);
   const { teamMembers } = useSelector((state) => state.user);
   const canManageTasks = usePermission(PERMISSIONS.MANAGE_TASKS);
+  const isReadOnly = !canManageTasks;
 
   const [formData, setFormData] = useState({
     title: '',
@@ -44,6 +45,9 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
   }));
 
   const handleChange = (event) => {
+    if (isReadOnly) {
+      return;
+    }
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -64,7 +68,7 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!canManageTasks) {
+    if (isReadOnly) {
       toast.error('You do not have permission to manage tasks.');
       return;
     }
@@ -128,6 +132,7 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
           onChange={handleChange}
           placeholder="e.g., Design homepage mockup"
           error={errors.title}
+          disabled={isReadOnly}
         />
 
         <div>
@@ -140,7 +145,8 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
             onChange={handleChange}
             placeholder="Task details and requirements"
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isReadOnly}
           />
         </div>
 
@@ -150,6 +156,7 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
             options={statusOptions}
             value={formData.status}
             onChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
+            disabled={isReadOnly}
           />
 
           <Dropdown
@@ -157,6 +164,7 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
             options={priorityOptions}
             value={formData.priority}
             onChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))}
+            disabled={isReadOnly}
           />
         </div>
 
@@ -166,6 +174,7 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
           value={formData.assignedTo}
           onChange={(value) => setFormData((prev) => ({ ...prev, assignedTo: value }))}
           placeholder="Select team member"
+          disabled={isReadOnly}
         />
 
         <Input
@@ -174,6 +183,7 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
           type="date"
           value={formData.dueDate}
           onChange={handleChange}
+          disabled={isReadOnly}
         />
         {!canManageTasks && (
           <p className="text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3">

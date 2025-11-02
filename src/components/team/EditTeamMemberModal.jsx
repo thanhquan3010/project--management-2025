@@ -5,13 +5,10 @@ import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Dropdown from '../common/Dropdown';
 import Button from '../common/Button';
-import {
-  createTeamMember,
-  fetchRoles,
-} from '../../features/user/userSlice';
+import { fetchRoles, updateTeamMember } from '../../features/user/userSlice';
 import { selectCurrentUser } from '../../features/auth/authSlice';
 
-const AddTeamMemberModal = ({ isOpen, onClose }) => {
+const EditTeamMemberModal = ({ member, isOpen, onClose }) => {
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   const { roles, rolesStatus } = useSelector((state) => state.user);
@@ -29,30 +26,44 @@ const AddTeamMemberModal = ({ isOpen, onClose }) => {
   }, [dispatch, isOpen, rolesStatus]);
 
   useEffect(() => {
-    if (isOpen) {
-      setFormData({ name: '', email: '', roleId: '' });
+    if (isOpen && member) {
+      setFormData({
+        name: member.name ?? '',
+        email: member.email ?? '',
+        roleId: member.role?.id ?? member.roleId ?? '',
+      });
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, member]);
+
+  const roleId = currentUser?.role?.id;
 
   const availableRoles = useMemo(() => {
-    if (!currentUser?.role) {
+    if (!roleId) {
       return [];
     }
-    if (currentUser.role.id === 'admin') {
+    if (roleId === 'admin') {
       return roles;
     }
-    if (currentUser.role.id === 'manager') {
+    if (roleId === 'manager') {
+      if (member?.id === currentUser?.id) {
+        return roles.filter((role) => role.id === 'manager');
+      }
       return roles.filter((role) => role.id === 'contributor');
     }
+    if (roleId === 'contributor') {
+      return roles.filter((role) => role.id === member?.role?.id);
+    }
     return [];
-  }, [currentUser, roles]);
+  }, [roleId, roles, member, currentUser]);
 
   useEffect(() => {
-    if (!formData.roleId && availableRoles.length > 0) {
-      setFormData((prev) => ({ ...prev, roleId: availableRoles[0].id }));
+    if (formData.roleId && availableRoles.every((role) => role.id !== formData.roleId)) {
+      setFormData((prev) => ({ ...prev, roleId: availableRoles[0]?.id ?? '' }));
     }
   }, [availableRoles, formData.roleId]);
+
+  const canEdit = Boolean(availableRoles.length);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -85,35 +96,44 @@ const AddTeamMemberModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!member) {
+      return;
+    }
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
     try {
-      await dispatch(createTeamMember(formData)).unwrap();
-      toast.success('Team member added!');
+      await dispatch(
+        updateTeamMember({
+          id: member.id,
+          updates: {
+            name: formData.name,
+            email: formData.email,
+            roleId: formData.roleId,
+          },
+        }),
+      ).unwrap();
+      toast.success('Team member updated!');
       onClose();
-      setFormData({ name: '', email: '', roleId: availableRoles[0]?.id ?? '' });
     } catch (error) {
       toast.error(error);
     }
   };
 
-  const isReadOnly = availableRoles.length === 0;
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Add Team Member"
+      title="Edit Team Member"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isReadOnly}>
-            Add Member
+          <Button onClick={handleSubmit} disabled={!canEdit}>
+            Save Changes
           </Button>
         </>
       }
@@ -125,8 +145,7 @@ const AddTeamMemberModal = ({ isOpen, onClose }) => {
           value={formData.name}
           onChange={handleChange}
           error={errors.name}
-          placeholder="e.g., Alex Johnson"
-          disabled={isReadOnly}
+          disabled={!canEdit}
         />
         <Input
           label="Email"
@@ -135,21 +154,20 @@ const AddTeamMemberModal = ({ isOpen, onClose }) => {
           value={formData.email}
           onChange={handleChange}
           error={errors.email}
-          placeholder="alex@example.com"
-          disabled={isReadOnly}
+          disabled={!canEdit}
         />
         <Dropdown
           label="Role"
           options={availableRoles.map((role) => ({ value: role.id, label: role.label }))}
           value={formData.roleId}
           onChange={handleRoleChange}
-          placeholder={availableRoles.length ? 'Select role' : 'No roles available'}
-          disabled={isReadOnly}
+          placeholder={availableRoles.length ? 'Select role' : 'No role changes allowed'}
+          disabled={!canEdit}
         />
         {errors.roleId && <p className="text-sm text-red-600">{errors.roleId}</p>}
-        {isReadOnly && (
+        {!canEdit && (
           <p className="text-sm text-gray-500">
-            You do not have permission to add new team members.
+            You do not have permission to change this member&apos;s role.
           </p>
         )}
       </form>
@@ -157,4 +175,4 @@ const AddTeamMemberModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default AddTeamMemberModal;
+export default EditTeamMemberModal;

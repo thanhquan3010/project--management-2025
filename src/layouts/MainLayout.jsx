@@ -10,6 +10,8 @@ import {
   Users,
   Menu,
   X,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useBreakpoint } from '../hooks/useBreakpoint';
@@ -28,6 +30,16 @@ const navigation = [
 const MainLayout = () => {
   const isCompact = useBreakpoint(1024);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true));
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+    const storedTheme = window.localStorage.getItem('theme');
+    if (storedTheme) {
+      return storedTheme === 'dark';
+    }
+    return true;
+  });
   const location = useLocation();
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
@@ -48,6 +60,20 @@ const MainLayout = () => {
     dispatch(logoutUser());
   };
 
+  const handleToggleTheme = () => {
+    setIsDarkMode((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', isDarkMode);
+      document.body.classList.toggle('dark', isDarkMode);
+    }
+  }, [isDarkMode]);
+
   useEffect(() => {
     if (isCompact) {
       setIsSidebarOpen(false);
@@ -57,10 +83,18 @@ const MainLayout = () => {
   }, [isCompact]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className={clsx(
+        'min-h-screen transition-colors duration-300',
+        isDarkMode
+          ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-100'
+          : 'bg-gray-50 text-gray-900',
+      )}
+    >
       <aside
         className={clsx(
-          'fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-40 lg:z-30',
+          'fixed left-0 top-0 h-full transition-all duration-300 z-40 lg:z-30 border-r backdrop-blur',
+          isDarkMode ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-gray-200',
           isCompact
             ? ['w-64', isSidebarOpen ? 'translate-x-0' : '-translate-x-full']
             : isSidebarOpen
@@ -68,14 +102,24 @@ const MainLayout = () => {
             : 'w-20',
         )}
       >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
+        <div
+          className={clsx(
+            'h-16 flex items-center justify-between px-6 border-b transition-colors',
+            isDarkMode ? 'border-slate-800' : 'border-gray-200',
+          )}
+        >
           {isSidebarOpen && (
-            <h1 className="text-xl font-bold text-primary-600">ProjectHub</h1>
+            <h1 className={clsx('text-xl font-bold', isDarkMode ? 'text-slate-100' : 'text-primary-600')}>
+              ProjectHub
+            </h1>
           )}
           <button
             type="button"
             onClick={() => setIsSidebarOpen((prev) => !prev)}
-            className="p-2 rounded-lg hover:bg-gray-100"
+            className={clsx(
+              'p-2 rounded-lg transition-colors',
+              isDarkMode ? 'hover:bg-slate-800/70 text-slate-100' : 'hover:bg-gray-100 text-gray-700',
+            )}
             aria-label="Toggle navigation"
           >
             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
@@ -83,7 +127,10 @@ const MainLayout = () => {
         </div>
 
         <nav className="p-4 space-y-2">
-          {(currentUser ? navigation.filter((item) => !item.permission || hasPermission(currentUser.role, item.permission)) : navigation).map((item) => {
+          {(currentUser
+            ? navigation.filter((item) => !item.permission || hasPermission(currentUser.role, item.permission))
+            : []
+          ).map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <Link
@@ -92,7 +139,11 @@ const MainLayout = () => {
                 className={clsx(
                   'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
                   isActive
-                    ? 'bg-primary-50 text-primary-700'
+                    ? isDarkMode
+                      ? 'bg-slate-800/80 text-slate-100'
+                      : 'bg-primary-50 text-primary-700'
+                    : isDarkMode
+                    ? 'text-slate-200 hover:bg-slate-800/60'
                     : 'text-gray-700 hover:bg-gray-100',
                 )}
               >
@@ -101,6 +152,16 @@ const MainLayout = () => {
               </Link>
             );
           })}
+          {!currentUser && (
+            <div
+              className={clsx(
+                'px-4 py-3 text-sm rounded-lg border border-dashed',
+                isDarkMode ? 'text-slate-300 bg-slate-900/70 border-slate-800' : 'text-gray-500 bg-gray-50 border-gray-200',
+              )}
+            >
+              Sign in to access workspace navigation.
+            </div>
+          )}
         </nav>
       </aside>
 
@@ -118,27 +179,59 @@ const MainLayout = () => {
           isCompact ? 'ml-0' : isSidebarOpen ? 'ml-64' : 'ml-20',
         )}
       >
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <header
+          className={clsx(
+            'h-16 flex items-center justify-between px-6 border-b transition-colors backdrop-blur',
+            isDarkMode ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-gray-200',
+          )}
+        >
+          <h2 className={clsx('text-lg font-semibold', isDarkMode ? 'text-slate-100' : 'text-gray-900')}>
             {navigation.find((nav) => nav.href === location.pathname)?.name || 'Dashboard'}
           </h2>
 
           <div className="flex items-center gap-4 text-sm">
+            <button
+              type="button"
+              onClick={handleToggleTheme}
+              className={clsx(
+                'p-2 rounded-lg border transition-colors',
+                isDarkMode
+                  ? 'border-slate-700 text-slate-100 bg-slate-900/80 hover:bg-slate-800/70'
+                  : 'border-gray-200 text-gray-700 bg-white hover:bg-gray-100',
+              )}
+              aria-label="Toggle theme"
+            >
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             {currentUser && (
               <>
                 <div className="text-right">
-                  <p className="font-medium text-gray-900">{currentUser.name}</p>
-                  <p className="text-gray-500 text-xs uppercase tracking-wide">
+                  <p className={clsx('font-medium', isDarkMode ? 'text-white' : 'text-gray-900')}>
+                    {currentUser.name}
+                  </p>
+                  <p className={clsx('text-xs uppercase tracking-wide', isDarkMode ? 'text-slate-400' : 'text-gray-500')}>
                     {currentUser.role?.label ?? 'Member'}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-primary-700 font-medium">{userInitials}</span>
+                <div
+                  className={clsx(
+                    'w-10 h-10 rounded-full flex items-center justify-center',
+                    isDarkMode ? 'bg-neutral-800' : 'bg-primary-100',
+                  )}
+                >
+                  <span className={clsx('font-medium', isDarkMode ? 'text-white' : 'text-primary-700')}>
+                    {userInitials}
+                  </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="px-3 py-2 border border-gray-200 rounded-lg text-gray-600 hover:text-primary-600 hover:border-primary-200 transition-colors"
+                  className={clsx(
+                    'px-3 py-2 border rounded-lg transition-colors',
+                    isDarkMode
+                      ? 'border-slate-700 text-slate-200 hover:text-slate-100 hover:border-slate-500 hover:bg-slate-800/60'
+                      : 'border-gray-200 text-gray-600 hover:text-primary-600 hover:border-primary-200',
+                  )}
                 >
                   Logout
                 </button>
@@ -147,7 +240,12 @@ const MainLayout = () => {
             {!currentUser && (
               <Link
                 to="/login"
-                className="px-3 py-2 border border-primary-200 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
+                className={clsx(
+                  'px-3 py-2 rounded-lg border transition-colors',
+                  isDarkMode
+                    ? 'border-slate-600 text-slate-100 hover:bg-slate-700'
+                    : 'border-primary-200 text-primary-600 hover:bg-primary-50',
+                )}
               >
                 Sign In
               </Link>

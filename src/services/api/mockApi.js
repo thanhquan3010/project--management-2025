@@ -58,6 +58,22 @@ const db = (() => {
 
 const findRole = (roleId) => db.roles.find((role) => role.id === roleId);
 
+const sanitizeUser = (user) => {
+  if (!user) {
+    return null;
+  }
+  const plain = toPlainObject(user);
+  const { password, ...rest } = plain;
+  return {
+    ...rest,
+    roleId: user.roleId,
+    role: findRole(user.roleId),
+  };
+};
+
+const avatarPalette = ['bg-primary-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500'];
+const randomAvatarColor = () => avatarPalette[Math.floor(Math.random() * avatarPalette.length)];
+
 const ensureProjectCounts = () => {
   db.workspaces.forEach((workspace) => {
     workspace.projectCount = db.projects.filter(
@@ -96,11 +112,7 @@ const authApi = {
         throw error;
       }
       db.auth.currentUserId = user.id;
-      const role = findRole(user.roleId);
-      return {
-        ...toPlainObject(user),
-        role,
-      };
+      return sanitizeUser(user);
     });
   },
 
@@ -121,22 +133,101 @@ const authApi = {
       if (!user) {
         return null;
       }
-      const role = findRole(user.roleId);
-      return {
-        ...toPlainObject(user),
-        role,
-      };
+      return sanitizeUser(user);
     });
   },
 
   async listUsers() {
-    return withDelay(() =>
-      db.users.map((user) => ({
-        ...toPlainObject(user),
-        role: findRole(user.roleId),
-        password: undefined,
-      })),
-    );
+    return withDelay(() => db.users.map(sanitizeUser));
+  },
+
+  async createUser(payload) {
+    return withDelay(() => {
+      const { name, email, roleId, password, avatarColor } = payload;
+      if (!name || !email) {
+        const error = new Error('Name and email are required');
+        error.status = 400;
+        throw error;
+      }
+      if (findUserByEmail(email)) {
+        const error = new Error('Email already exists');
+        error.status = 409;
+        throw error;
+      }
+      const role = findRole(roleId) ?? findRole('contributor');
+      if (!role) {
+        const error = new Error('Invalid role');
+        error.status = 400;
+        throw error;
+      }
+      const newUser = {
+        id: makeId(),
+        name,
+        email,
+        roleId: role.id,
+        password: password || 'password123',
+        avatarColor: avatarColor || randomAvatarColor(),
+        createdAt: new Date().toISOString(),
+      };
+      db.users.push(newUser);
+      return sanitizeUser(newUser);
+    });
+  },
+
+  async updateUser(id, updates) {
+    return withDelay(() => {
+      const user = db.users.find((item) => item.id === id);
+      if (!user) {
+        const error = new Error('User not found');
+        error.status = 404;
+        throw error;
+      }
+      if (updates.email && updates.email.toLowerCase() !== user.email.toLowerCase()) {
+        if (findUserByEmail(updates.email)) {
+          const error = new Error('Email already exists');
+          error.status = 409;
+          throw error;
+        }
+      }
+      if (updates.roleId) {
+        const role = findRole(updates.roleId);
+        if (!role) {
+          const error = new Error('Invalid role');
+          error.status = 400;
+          throw error;
+        }
+        user.roleId = updates.roleId;
+      }
+      if (typeof updates.name === 'string') {
+        user.name = updates.name;
+      }
+      if (typeof updates.email === 'string') {
+        user.email = updates.email;
+      }
+      if (updates.avatarColor) {
+        user.avatarColor = updates.avatarColor;
+      }
+      if (updates.password) {
+        user.password = updates.password;
+      }
+      return sanitizeUser(user);
+    });
+  },
+
+  async deleteUser(id) {
+    return withDelay(() => {
+      const index = db.users.findIndex((item) => item.id === id);
+      if (index === -1) {
+        const error = new Error('User not found');
+        error.status = 404;
+        throw error;
+      }
+      db.users.splice(index, 1);
+      if (db.auth.currentUserId === id) {
+        db.auth.currentUserId = null;
+      }
+      return { success: true, id };
+    });
   },
 };
 

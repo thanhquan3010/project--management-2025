@@ -41,7 +41,6 @@ const AnalyticsDashboard = () => {
         },
         {
           title: 'Completion Rate',
-          value: `${completionRate}%`,
           icon: Clock,
           color: 'text-orange-600',
           bgColor: 'bg-orange-100',

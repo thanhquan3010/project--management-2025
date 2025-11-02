@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event';
-import { screen } from '@testing-library/react';
+import { screen, act } from '@testing-library/react';
 import WorkspaceList from '../WorkspaceList';
 import { renderWithProviders } from '../../../test-utils/renderWithProviders';
 
@@ -11,7 +11,7 @@ describe('WorkspaceList', () => {
         { id: '2', name: 'Workspace Two', description: 'Second', projectCount: 0, memberCount: 1 },
       ],
       currentWorkspace: null,
-      loading: false,
+      loading: 'idle',
       error: null,
     },
     project: {
@@ -20,11 +20,11 @@ describe('WorkspaceList', () => {
         { id: 'p2', name: 'Project Beta', description: 'Beta', workspaceId: '2', status: 'in-progress' },
       ],
       currentProject: null,
-      loading: false,
+      loading: 'idle',
       error: null,
     },
-    task: { tasks: [], filteredTasks: [], filter: 'all', loading: false, error: null },
-    user: { users: [], currentUser: null, teamMembers: [], loading: false, error: null },
+    task: { tasks: [], filteredTasks: [], filter: 'all', loading: 'idle', error: null },
+    user: { users: [], currentUser: null, teamMembers: [], loading: 'idle', error: null },
   };
 
   it('renders workspace cards', () => {
@@ -34,8 +34,11 @@ describe('WorkspaceList', () => {
   });
 
   it('selects workspace and updates active badge', async () => {
+    const user = userEvent.setup();
     const { store } = renderWithProviders(<WorkspaceList />, { preloadedState: baseState });
-    await userEvent.click(screen.getByText('Workspace One'));
+    await act(async () => {
+      await user.click(screen.getByText('Workspace One'));
+    });
 
     const { workspace, project } = store.getState();
     expect(workspace.currentWorkspace?.id).toBe('1');

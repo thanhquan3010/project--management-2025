@@ -12,14 +12,23 @@ const Button = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
+    'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none';
 
   const variants = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-    secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-    success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
-    outline: 'border-2 border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500',
+    primary:
+      'bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-lg shadow-fuchsia-500/20 hover:from-fuchsia-500 hover:via-purple-500 hover:to-indigo-500 focus-visible:ring-fuchsia-300',
+    secondary:
+      'bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:ring-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+    danger:
+      'bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25 hover:from-rose-600 hover:to-red-700 focus-visible:ring-rose-300',
+    success:
+      'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-600 hover:to-teal-600 focus-visible:ring-emerald-200',
+    outline:
+      'border border-slate-200 bg-white/80 text-slate-700 shadow-sm hover:bg-white focus-visible:ring-slate-300 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-900',
+    ghost:
+      'bg-transparent text-slate-700 hover:text-slate-900 hover:bg-slate-100 focus-visible:ring-slate-300 dark:text-slate-200 dark:hover:bg-slate-800',
+    accent:
+      'bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 text-white shadow-lg shadow-orange-400/25 hover:from-amber-500 hover:via-orange-500 hover:to-rose-500 focus-visible:ring-amber-200',
   };
 
   const sizes = {
@@ -37,7 +46,6 @@ const Button = ({
         baseStyles,
         variants[variant],
         sizes[size],
-        disabled && 'opacity-50 cursor-not-allowed',
         className,
       )}
       {...props}

@@ -11,6 +11,7 @@ import { PERMISSIONS } from '../../constants/permissions';
 const EditWorkspaceModal = ({ workspace, isOpen, onClose }) => {
   const dispatch = useDispatch();
   const canManageWorkspaces = usePermission(PERMISSIONS.MANAGE_WORKSPACES);
+  const isReadOnly = !canManageWorkspaces;
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [errors, setErrors] = useState({});
 
@@ -25,6 +26,9 @@ const EditWorkspaceModal = ({ workspace, isOpen, onClose }) => {
   }, [workspace]);
 
   const handleChange = (event) => {
+    if (isReadOnly) {
+      return;
+    }
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -45,7 +49,7 @@ const EditWorkspaceModal = ({ workspace, isOpen, onClose }) => {
     if (!workspace) {
       return;
     }
-    if (!canManageWorkspaces) {
+    if (isReadOnly) {
       toast.error('You do not have permission to manage workspaces.');
       return;
     }
@@ -92,6 +96,7 @@ const EditWorkspaceModal = ({ workspace, isOpen, onClose }) => {
           value={formData.name}
           onChange={handleChange}
           error={errors.name}
+          disabled={isReadOnly}
         />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -102,10 +107,11 @@ const EditWorkspaceModal = ({ workspace, isOpen, onClose }) => {
             value={formData.description}
             onChange={handleChange}
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            disabled={isReadOnly}
           />
         </div>
-        {!canManageWorkspaces && (
+        {isReadOnly && (
           <p className="text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3">
             You do not have permission to edit workspaces.
           </p>
