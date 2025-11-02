@@ -1,10 +1,10 @@
 import React from 'react';
-import { Calendar, Users, CheckCircle2 } from 'lucide-react';
+import { Calendar, Users, CheckCircle2, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import Card from '../common/Card';
 import Badge from '../common/Badge';
 
-const ProjectCard = ({ project, onClick }) => {
+const ProjectCard = ({ project, onClick, canManageProjects, onEditProject, onDeleteProject }) => {
   const getStatusVariant = (status) => {
     const variants = {
       'not-started': 'default',
@@ -17,14 +17,46 @@ const ProjectCard = ({ project, onClick }) => {
 
   const completionRate = project.completionRate || 0;
 
+  const handleEdit = (event) => {
+    event.stopPropagation();
+    onEditProject?.(project);
+  };
+
+  const handleDelete = (event) => {
+    event.stopPropagation();
+    onDeleteProject?.(project);
+  };
+
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={onClick}>
       <div className="space-y-4">
-        <div className="flex items-start justify-between">
-          <h3 className="font-semibold text-lg">{project.name}</h3>
-          <Badge variant={getStatusVariant(project.status)}>
-            {project.status?.replace('-', ' ') || 'not-started'}
-          </Badge>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-semibold text-lg">{project.name}</h3>
+            <Badge variant={getStatusVariant(project.status)}>
+              {project.status?.replace('-', ' ') || 'not-started'}
+            </Badge>
+          </div>
+          {canManageProjects && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleEdit}
+                className="p-1.5 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                aria-label="Edit project"
+              >
+                <Pencil size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="p-1.5 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                aria-label="Delete project"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          )}
         </div>
 
         <p className="text-sm text-gray-600 line-clamp-2">{project.description}</p>

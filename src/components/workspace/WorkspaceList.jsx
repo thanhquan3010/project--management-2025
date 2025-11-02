@@ -1,12 +1,12 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Building2, Users, FolderKanban } from 'lucide-react';
+import { Building2, Users, FolderKanban, Pencil, Trash2 } from 'lucide-react';
 import { setCurrentWorkspace } from '../../features/workspace/workspaceSlice';
 import { setCurrentProject } from '../../features/project/projectSlice';
 import Card from '../common/Card';
 import Badge from '../common/Badge';
 
-const WorkspaceList = ({ onSelectWorkspace }) => {
+const WorkspaceList = ({ onSelectWorkspace, onEditWorkspace, onDeleteWorkspace, canManageWorkspaces }) => {
   const dispatch = useDispatch();
   const { workspaces, currentWorkspace } = useSelector((state) => state.workspace);
   const { projects } = useSelector((state) => state.project);
@@ -36,7 +36,7 @@ const WorkspaceList = ({ onSelectWorkspace }) => {
           className="cursor-pointer hover:shadow-lg transition-shadow"
           onClick={() => handleSelectWorkspace(workspace)}
         >
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
                 <Building2 className="text-primary-600" size={24} />
@@ -46,6 +46,32 @@ const WorkspaceList = ({ onSelectWorkspace }) => {
                 <p className="text-sm text-gray-500">{workspace.description}</p>
               </div>
             </div>
+            {canManageWorkspaces && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEditWorkspace?.(workspace);
+                  }}
+                  className="p-1.5 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  aria-label="Edit workspace"
+                >
+                  <Pencil size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDeleteWorkspace?.(workspace);
+                  }}
+                  className="p-1.5 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  aria-label="Delete workspace"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 flex items-center gap-4">

@@ -1,21 +1,23 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { api } from '../../services/api/mockApi';
 
 const initialState = {
   users: [],
   currentUser: null,
   teamMembers: [],
-  loading: false,
+  loading: 'idle',
   error: null,
 };
+
+export const fetchTeamMembers = createAsyncThunk('user/fetchTeamMembers', async () => {
+  const users = await api.auth.listUsers();
+  return users;
+});
 
 const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setUsers(state, action) {
-      state.users = action.payload;
-      state.teamMembers = action.payload;
-    },
     addUser(state, action) {
       state.users.push(action.payload);
       state.teamMembers = state.users;
@@ -37,24 +39,31 @@ const userSlice = createSlice({
     setTeamMembers(state, action) {
       state.teamMembers = action.payload;
     },
-    setLoading(state, action) {
-      state.loading = action.payload;
-    },
-    setError(state, action) {
-      state.error = action.payload;
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchTeamMembers.pending, (state) => {
+        state.loading = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchTeamMembers.fulfilled, (state, action) => {
+        state.loading = 'succeeded';
+        state.users = action.payload;
+        state.teamMembers = action.payload;
+      })
+      .addCase(fetchTeamMembers.rejected, (state, action) => {
+        state.loading = 'failed';
+        state.error = action.error.message;
+      });
   },
 });
 
 export const {
-  setUsers,
   addUser,
   updateUser,
   removeUser,
   setCurrentUser,
   setTeamMembers,
-  setLoading,
-  setError,
 } = userSlice.actions;
 
 export default userSlice.reducer;

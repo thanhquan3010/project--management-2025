@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Plus } from 'lucide-react';
 import Button from '../components/common/Button';
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
 import TeamMemberCard from '../components/team/TeamMemberCard';
 import AddTeamMemberModal from '../components/team/AddTeamMemberModal';
 
 const TeamPage = () => {
   const { teamMembers } = useSelector((state) => state.user);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const canManageTeam = usePermission(PERMISSIONS.MANAGE_TEAM);
 
   return (
     <div className="space-y-6">
@@ -18,10 +21,12 @@ const TeamPage = () => {
             Manage team members and their roles across the workspace.
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus size={20} className="mr-2" />
-          Add Member
-        </Button>
+        {canManageTeam && (
+          <Button onClick={() => setIsModalOpen(true)}>
+            <Plus size={20} className="mr-2" />
+            Add Member
+          </Button>
+        )}
       </div>
 
       {teamMembers.length ? (
@@ -37,7 +42,7 @@ const TeamPage = () => {
       )}
 
       <AddTeamMemberModal
-        isOpen={isModalOpen}
+        isOpen={isModalOpen && canManageTeam}
         onClose={() => setIsModalOpen(false)}
       />
     </div>

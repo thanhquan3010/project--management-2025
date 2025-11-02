@@ -1,18 +1,34 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React, { useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { ArrowRight, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
+import { updateTaskAsync } from '../features/task/taskSlice';
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
 
 const HomePage = () => {
+  const dispatch = useDispatch();
   const { workspaces } = useSelector((state) => state.workspace);
   const { projects } = useSelector((state) => state.project);
   const { tasks } = useSelector((state) => state.task);
+  const canManageTasks = usePermission(PERMISSIONS.MANAGE_TASKS);
 
   const recentProjects = projects.slice(0, 3);
   const recentTasks = tasks.slice(0, 5);
+
+  const handleToggleTaskStatus = useCallback(
+    (task) => {
+      const nextStatus = task.status === 'completed' ? 'pending' : 'completed';
+      if (!canManageTasks) {
+        return;
+      }
+      dispatch(updateTaskAsync({ id: task.id, updates: { status: nextStatus } }));
+    },
+    [dispatch, canManageTasks],
+  );
 
   return (
     <div className="space-y-6">
@@ -123,7 +139,8 @@ const HomePage = () => {
                     type="checkbox"
                     className="w-5 h-5"
                     checked={task.status === 'completed'}
-                    readOnly
+                    onChange={() => handleToggleTaskStatus(task)}
+                    disabled={!canManageTasks}
                   />
                   <span className="text-gray-900">{task.title}</span>
                 </div>

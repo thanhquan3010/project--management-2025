@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
@@ -12,20 +13,40 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { logoutUser, selectCurrentUser } from '../features/auth/authSlice';
+import { PERMISSIONS, hasPermission } from '../constants/permissions';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Workspaces', href: '/workspaces', icon: Building2 },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Team', href: '/team', icon: Users },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3, permission: PERMISSIONS.VIEW_ANALYTICS },
+  { name: 'Team', href: '/team', icon: Users, permission: PERMISSIONS.MANAGE_TEAM },
 ];
 
-const MainLayout = ({ children }) => {
+const MainLayout = () => {
   const isCompact = useBreakpoint(1024);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true));
   const location = useLocation();
+  const dispatch = useDispatch();
+  const currentUser = useSelector(selectCurrentUser);
+
+  const userInitials = useMemo(() => {
+    if (!currentUser?.name) {
+      return 'U';
+    }
+    return currentUser.name
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+  }, [currentUser]);
+
+  const handleLogout = () => {
+    dispatch(logoutUser());
+  };
 
   useEffect(() => {
     if (isCompact) {
@@ -62,7 +83,7 @@ const MainLayout = ({ children }) => {
         </div>
 
         <nav className="p-4 space-y-2">
-          {navigation.map((item) => {
+          {(currentUser ? navigation.filter((item) => !item.permission || hasPermission(currentUser.role, item.permission)) : navigation).map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <Link
@@ -102,14 +123,41 @@ const MainLayout = ({ children }) => {
             {navigation.find((nav) => nav.href === location.pathname)?.name || 'Dashboard'}
           </h2>
 
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-              <span className="text-primary-700 font-medium">U</span>
-            </div>
+          <div className="flex items-center gap-4 text-sm">
+            {currentUser && (
+              <>
+                <div className="text-right">
+                  <p className="font-medium text-gray-900">{currentUser.name}</p>
+                  <p className="text-gray-500 text-xs uppercase tracking-wide">
+                    {currentUser.role?.label ?? 'Member'}
+                  </p>
+                </div>
+                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                  <span className="text-primary-700 font-medium">{userInitials}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-gray-600 hover:text-primary-600 hover:border-primary-200 transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            )}
+            {!currentUser && (
+              <Link
+                to="/login"
+                className="px-3 py-2 border border-primary-200 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </header>
 
-        <main className="p-6">{children}</main>
+        <main className="p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

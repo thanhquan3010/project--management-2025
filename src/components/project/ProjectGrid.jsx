@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setCurrentProject } from '../../features/project/projectSlice';
 import ProjectCard from './ProjectCard';
 
-const ProjectGrid = ({ onSelectProject }) => {
+const ProjectGrid = ({ onSelectProject, onEditProject, onDeleteProject, canManageProjects }) => {
   const dispatch = useDispatch();
   const { projects } = useSelector((state) => state.project);
   const { currentWorkspace } = useSelector((state) => state.workspace);
@@ -32,6 +32,9 @@ const ProjectGrid = ({ onSelectProject }) => {
           key={project.id}
           project={project}
           onClick={() => handleSelectProject(project)}
+          canManageProjects={canManageProjects}
+          onEditProject={onEditProject}
+          onDeleteProject={onDeleteProject}
         />
       ))}
     </div>

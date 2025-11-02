@@ -1,30 +1,54 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { createTaskAsync } from '../../features/task/taskSlice';
+import { updateTaskAsync } from '../../features/task/taskSlice';
 import { fetchProjects } from '../../features/project/projectSlice';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Dropdown from '../common/Dropdown';
 import Button from '../common/Button';
-import { PERMISSIONS } from '../../constants/permissions';
 import { usePermission } from '../../hooks/usePermission';
+import { PERMISSIONS } from '../../constants/permissions';
 
-const CreateTaskModal = ({ isOpen, onClose }) => {
+const defaultForm = {
+  title: '',
+  description: '',
+  status: 'pending',
+  priority: 'medium',
+  dueDate: '',
+  assignedTo: '',
+};
+
+const EditTaskModal = ({ task, isOpen, onClose }) => {
   const dispatch = useDispatch();
-  const { currentProject } = useSelector((state) => state.project);
   const { teamMembers } = useSelector((state) => state.user);
   const canManageTasks = usePermission(PERMISSIONS.MANAGE_TASKS);
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    status: 'pending',
-    priority: 'medium',
-    dueDate: '',
-    assignedTo: '',
-  });
+  const [formData, setFormData] = useState(defaultForm);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (task) {
+      setFormData({
+        title: task.title || '',
+        description: task.description || '',
+        status: task.status || 'pending',
+        priority: task.priority || 'medium',
+        dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
+        assignedTo: task.assignedTo?.id || '',
+      });
+      setErrors({});
+    } else {
+      setFormData(defaultForm);
+    }
+  }, [task]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
 
   const statusOptions = [
     { value: 'pending', label: 'To Do' },
@@ -43,38 +67,26 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
     label: member.name,
   }));
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-  };
-
   const validate = () => {
     const newErrors = {};
     if (!formData.title.trim()) {
       newErrors.title = 'Task title is required';
-    }
-    if (!currentProject) {
-      newErrors.project = 'Select a project before creating a task';
     }
     return newErrors;
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!task) {
+      return;
+    }
     if (!canManageTasks) {
       toast.error('You do not have permission to manage tasks.');
       return;
     }
     const newErrors = validate();
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      if (newErrors.project) {
-        toast.error(newErrors.project);
-      }
       return;
     }
 
@@ -82,25 +94,19 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
 
     try {
       await dispatch(
-        createTaskAsync({
-          ...formData,
-          assignedTo: assignee ? { id: assignee.id, name: assignee.name } : null,
-          projectId: currentProject?.id,
+        updateTaskAsync({
+          id: task.id,
+          updates: {
+            ...formData,
+            assignedTo: assignee ? { id: assignee.id, name: assignee.name } : null,
+          },
         }),
       ).unwrap();
       dispatch(fetchProjects());
-      toast.success('Task created successfully!');
+      toast.success('Task updated successfully!');
       onClose();
-      setFormData({
-        title: '',
-        description: '',
-        status: 'pending',
-        priority: 'medium',
-        dueDate: '',
-        assignedTo: '',
-      });
     } catch (error) {
-      toast.error(error || 'Failed to create task');
+      toast.error(error || 'Failed to update task');
     }
   };
 
@@ -108,17 +114,17 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create New Task"
-      footer={
+      title="Edit Task"
+      footer={(
         <>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canManageTasks}>
-            {canManageTasks ? 'Create Task' : 'Read Only'}
+            Save Changes
           </Button>
         </>
-      }
+      )}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
@@ -126,10 +132,8 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
           name="title"
           value={formData.title}
           onChange={handleChange}
-          placeholder="e.g., Design homepage mockup"
           error={errors.title}
         />
-
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Description
@@ -138,7 +142,6 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Task details and requirements"
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
@@ -151,7 +154,6 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
             value={formData.status}
             onChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
           />
-
           <Dropdown
             label="Priority"
             options={priorityOptions}
@@ -175,10 +177,11 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
           value={formData.dueDate}
           onChange={handleChange}
         />
+
         {!canManageTasks && (
           <p className="text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3">
-            You are signed in with view-only permissions. Ask a project manager or admin to promote
-            your role if you need to create tasks.
+            You are signed in with view-only permissions. Only project managers or admins can edit
+            tasks.
           </p>
         )}
       </form>
@@ -186,4 +189,4 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default CreateTaskModal;
+export default EditTaskModal;

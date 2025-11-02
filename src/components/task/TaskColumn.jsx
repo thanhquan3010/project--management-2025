@@ -2,7 +2,7 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import TaskCard from './TaskCard';
 
-const TaskColumn = ({ title, status, tasks, onAddTask }) => {
+const TaskColumn = ({ title, status, tasks, onAddTask, onEditTask, onDeleteTask, canManageTasks }) => {
   const getColumnClasses = (state) => {
     const colors = {
       pending: 'bg-gray-100 border-gray-300',
@@ -23,17 +23,29 @@ const TaskColumn = ({ title, status, tasks, onAddTask }) => {
 
       <div className="flex-1 bg-gray-50 p-4 space-y-3 min-h-[400px] rounded-b-lg">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            canManageTasks={canManageTasks}
+            onEditTask={onEditTask}
+            onDeleteTask={onDeleteTask}
+          />
         ))}
 
-        <button
-          type="button"
-          onClick={() => onAddTask?.(status)}
-          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary-500 hover:text-primary-500 transition-colors flex items-center justify-center gap-2"
-        >
-          <Plus size={20} />
-          <span>Add Task</span>
-        </button>
+        {canManageTasks ? (
+          <button
+            type="button"
+            onClick={() => onAddTask?.(status)}
+            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary-500 hover:text-primary-500 transition-colors flex items-center justify-center gap-2"
+          >
+            <Plus size={20} />
+            <span>Add Task</span>
+          </button>
+        ) : (
+          <div className="w-full py-3 border border-dashed border-gray-200 rounded-lg text-gray-400 text-sm text-center">
+            View only
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
-import { createWorkspace } from '../../features/workspace/workspaceSlice';
+import { updateWorkspaceAsync } from '../../features/workspace/workspaceSlice';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import { usePermission } from '../../hooks/usePermission';
 import { PERMISSIONS } from '../../constants/permissions';
 
-const CreateWorkspaceModal = ({ isOpen, onClose }) => {
+const EditWorkspaceModal = ({ workspace, isOpen, onClose }) => {
   const dispatch = useDispatch();
   const canManageWorkspaces = usePermission(PERMISSIONS.MANAGE_WORKSPACES);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-  });
+  const [formData, setFormData] = useState({ name: '', description: '' });
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (workspace) {
+      setFormData({
+        name: workspace.name || '',
+        description: workspace.description || '',
+      });
+      setErrors({});
+    }
+  }, [workspace]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -26,37 +33,39 @@ const CreateWorkspaceModal = ({ isOpen, onClose }) => {
   };
 
   const validate = () => {
-    const newErrors = {};
+    const validationErrors = {};
     if (!formData.name.trim()) {
-      newErrors.name = 'Workspace name is required';
+      validationErrors.name = 'Workspace name is required';
     }
-    return newErrors;
+    return validationErrors;
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!workspace) {
+      return;
+    }
     if (!canManageWorkspaces) {
       toast.error('You do not have permission to manage workspaces.');
       return;
     }
-    const newErrors = validate();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length) {
+      setErrors(validationErrors);
       return;
     }
 
     try {
       await dispatch(
-        createWorkspace({
-          ...formData,
-          memberCount: 1,
+        updateWorkspaceAsync({
+          id: workspace.id,
+          updates: { ...formData },
         }),
       ).unwrap();
-      toast.success('Workspace created successfully!');
+      toast.success('Workspace updated successfully!');
       onClose();
-      setFormData({ name: '', description: '' });
     } catch (error) {
-      toast.error(error || 'Failed to create workspace');
+      toast.error(error || 'Failed to update workspace');
     }
   };
 
@@ -64,17 +73,17 @@ const CreateWorkspaceModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create New Workspace"
-      footer={
+      title="Edit Workspace"
+      footer={(
         <>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canManageWorkspaces}>
-            {canManageWorkspaces ? 'Create Workspace' : 'Read Only'}
+            Save Changes
           </Button>
         </>
-      }
+      )}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
@@ -82,10 +91,8 @@ const CreateWorkspaceModal = ({ isOpen, onClose }) => {
           name="name"
           value={formData.name}
           onChange={handleChange}
-          placeholder="e.g., My Company"
           error={errors.name}
         />
-
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Description
@@ -94,15 +101,13 @@ const CreateWorkspaceModal = ({ isOpen, onClose }) => {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Brief description of this workspace"
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
-
         {!canManageWorkspaces && (
           <p className="text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3">
-            You do not have permission to manage workspaces.
+            You do not have permission to edit workspaces.
           </p>
         )}
       </form>
@@ -110,4 +115,4 @@ const CreateWorkspaceModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default CreateWorkspaceModal;
+export default EditWorkspaceModal;

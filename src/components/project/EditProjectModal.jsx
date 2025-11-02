@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
-import { createProjectAsync, setCurrentProject } from '../../features/project/projectSlice';
+import { updateProjectAsync, setCurrentProject } from '../../features/project/projectSlice';
 import { fetchWorkspaces } from '../../features/workspace/workspaceSlice';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
@@ -10,11 +10,16 @@ import Button from '../common/Button';
 import { usePermission } from '../../hooks/usePermission';
 import { PERMISSIONS } from '../../constants/permissions';
 
-const CreateProjectModal = ({ isOpen, onClose }) => {
-  const dispatch = useDispatch();
-  const { currentWorkspace } = useSelector((state) => state.workspace);
-  const canManageProjects = usePermission(PERMISSIONS.MANAGE_PROJECTS);
+const statusOptions = [
+  { value: 'not-started', label: 'Not Started' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'on-hold', label: 'On Hold' },
+  { value: 'completed', label: 'Completed' },
+];
 
+const EditProjectModal = ({ project, isOpen, onClose }) => {
+  const dispatch = useDispatch();
+  const canManageProjects = usePermission(PERMISSIONS.MANAGE_PROJECTS);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -23,12 +28,17 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
   });
   const [errors, setErrors] = useState({});
 
-  const statusOptions = [
-    { value: 'not-started', label: 'Not Started' },
-    { value: 'in-progress', label: 'In Progress' },
-    { value: 'on-hold', label: 'On Hold' },
-    { value: 'completed', label: 'Completed' },
-  ];
+  useEffect(() => {
+    if (project) {
+      setFormData({
+        name: project.name ?? '',
+        description: project.description ?? '',
+        status: project.status ?? 'not-started',
+        deadline: project.deadline ? project.deadline.slice(0, 10) : '',
+      });
+      setErrors({});
+    }
+  }, [project]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -43,51 +53,43 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
   };
 
   const validate = () => {
-    const newErrors = {};
+    const nextErrors = {};
     if (!formData.name.trim()) {
-      newErrors.name = 'Project name is required';
+      nextErrors.name = 'Project name is required';
     }
-    if (!currentWorkspace) {
-      newErrors.workspace = 'Select a workspace before creating a project';
-    }
-    return newErrors;
+    return nextErrors;
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!project) {
+      return;
+    }
     if (!canManageProjects) {
       toast.error('You do not have permission to manage projects.');
       return;
     }
-    const newErrors = validate();
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      if (newErrors.workspace) {
-        toast.error(newErrors.workspace);
-      }
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length) {
+      setErrors(validationErrors);
       return;
     }
 
     try {
-      const project = await dispatch(
-        createProjectAsync({
-          ...formData,
-          workspaceId: currentWorkspace?.id,
+      const updatedProject = await dispatch(
+        updateProjectAsync({
+          id: project.id,
+          updates: {
+            ...formData,
+          },
         }),
       ).unwrap();
-      dispatch(setCurrentProject(project));
+      dispatch(setCurrentProject(updatedProject));
       dispatch(fetchWorkspaces());
-      toast.success('Project created successfully!');
+      toast.success('Project updated successfully!');
       onClose();
-      setFormData({
-        name: '',
-        description: '',
-        status: 'not-started',
-        deadline: '',
-      });
     } catch (error) {
-      toast.error(error || 'Failed to create project');
+      toast.error(error || 'Failed to update project');
     }
   };
 
@@ -95,17 +97,17 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create New Project"
-      footer={
+      title="Edit Project"
+      footer={(
         <>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!canManageProjects}>
-            {canManageProjects ? 'Create Project' : 'Read Only'}
+            Save Changes
           </Button>
         </>
-      }
+      )}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
@@ -113,7 +115,6 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
           name="name"
           value={formData.name}
           onChange={handleChange}
-          placeholder="e.g., Website Redesign"
           error={errors.name}
         />
 
@@ -125,7 +126,6 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Brief description of the project"
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
@@ -145,9 +145,10 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
           value={formData.deadline}
           onChange={handleChange}
         />
+
         {!canManageProjects && (
           <p className="text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3">
-            You do not have permission to manage projects.
+            You do not have permission to edit projects.
           </p>
         )}
       </form>
@@ -155,4 +156,4 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default CreateProjectModal;
+export default EditProjectModal;

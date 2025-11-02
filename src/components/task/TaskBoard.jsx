@@ -2,7 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import TaskColumn from './TaskColumn';
 
-const TaskBoard = ({ onAddTask }) => {
+const TaskBoard = ({ onAddTask, onEditTask, onDeleteTask, canManageTasks }) => {
   const { filteredTasks, filter } = useSelector((state) => state.task);
 
   const columns = useMemo(
@@ -38,6 +38,9 @@ const TaskBoard = ({ onAddTask }) => {
           status={column.status}
           tasks={getTasksByStatus(column.status)}
           onAddTask={onAddTask}
+          onEditTask={onEditTask}
+          onDeleteTask={onDeleteTask}
+          canManageTasks={canManageTasks}
         />
       ))}
     </div>
